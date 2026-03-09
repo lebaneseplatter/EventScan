@@ -346,7 +346,7 @@ export default function EventScan() {
 
   const gemini = async (prompt, base64, mediaType) => {
     const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
     const parts = base64
       ? [{ inlineData: { mimeType: mediaType, data: base64 } }, { text: prompt }]
       : [{ text: prompt }];
