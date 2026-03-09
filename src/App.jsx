@@ -435,6 +435,16 @@ ${structured}`,
   const setEvState = (i, s) => setStates(prev => prev.map((v, idx) => idx === i ? s : v));
   const acceptedCount = states.filter(s => s === "accepted").length;
 
+  const downloadICS = (icsContent) => {
+    const url = URL.createObjectURL(new Blob([icsContent], { type: "text/calendar" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = "events.ics";
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setToast(true);
+  };
+
   const shareICS = async () => {
     const accepted = events.filter((_, i) => states[i] === "accepted");
     const icsContent = generateICS(accepted);
@@ -445,17 +455,12 @@ ${structured}`,
         await navigator.share({ files: [file], title: "Calendar Events", text: "Add these events to your calendar" });
         setToast(true);
       } catch (err) {
-        if (err.name !== "AbortError") setError("Sharing failed: " + err.message);
+        if (err.name === "AbortError") return;
+        // Share failed (desktop) — fall back to download
+        downloadICS(icsContent);
       }
     } else {
-      // Fallback: direct download
-      const url = URL.createObjectURL(new Blob([icsContent], { type: "text/calendar" }));
-      const a = document.createElement("a");
-      a.href = url; a.download = "events.ics";
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setToast(true);
+      downloadICS(icsContent);
     }
   };
 
