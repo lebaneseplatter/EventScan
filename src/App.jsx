@@ -346,7 +346,7 @@ export default function EventScan() {
 
   const gemini = async (prompt, base64, mediaType) => {
     const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${API_KEY}`;
     const parts = base64
       ? [{ inlineData: { mimeType: mediaType, data: base64 } }, { text: prompt }]
       : [{ text: prompt }];
@@ -403,7 +403,7 @@ Format: [{ "title": string, "date": "YYYY-MM-DD", "time": "HH:MM", "endTime": "H
 GAP-FILLING RULES:
 - date: convert any format to YYYY-MM-DD. Unknown → ${today}
 - time: "7pm"→"19:00", "noon"→"12:00", "evening"→"18:00", "morning"→"09:00", "night"→"20:00". Unknown → "09:00"
-- endTime: if missing, then skip this part
+- endTime: if missing, add 2 hours to start time
 - description: combine venue, organizer, theme, dress code, ticket info into one sentence
 - FALLBACK if truly nothing: [{"title":"Event from image","date":"${today}","time":"09:00","endTime":"11:00","description":"Details extracted from uploaded image"}]
 
