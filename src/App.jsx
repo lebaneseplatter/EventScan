@@ -403,7 +403,7 @@ Format: [{ "title": string, "date": "YYYY-MM-DD", "time": "HH:MM", "endTime": "H
 GAP-FILLING RULES:
 - date: convert any format to YYYY-MM-DD. Unknown → ${today}
 - time: "7pm"→"19:00", "noon"→"12:00", "evening"→"18:00", "morning"→"09:00", "night"→"20:00". Unknown → "09:00"
-- endTime: if missing, add 2 hours to start time
+- endTime: if missing, then skip this part
 - description: combine venue, organizer, theme, dress code, ticket info into one sentence
 - FALLBACK if truly nothing: [{"title":"Event from image","date":"${today}","time":"09:00","endTime":"11:00","description":"Details extracted from uploaded image"}]
 
