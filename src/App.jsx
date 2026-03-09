@@ -254,6 +254,51 @@ const styles = `
 
   .es-empty { text-align: center; padding: 20px; color: var(--muted); font-size: 0.87rem; }
 
+
+  /* Edit modal */
+  .es-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; padding: 20px; animation: esUp 0.2s ease both;
+  }
+  .es-modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; width: 100%; max-width: 360px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+  .es-modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem; color: var(--text); margin-bottom: 18px;
+  }
+  .es-field { margin-bottom: 13px; }
+  .es-field label { display: block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .es-field input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 11px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+    outline: none; transition: border-color 0.15s;
+  }
+  .es-field input:focus { border-color: var(--accent); }
+  .es-modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .es-modal-save {
+    flex: 1; background: var(--accent); color: #1A1612; border: none;
+    padding: 9px; border-radius: 9px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+  }
+  .es-modal-save:hover { opacity: 0.85; }
+  .es-modal-cancel {
+    background: transparent; color: var(--muted); border: 1.5px solid var(--border);
+    padding: 9px 16px; border-radius: 9px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem; cursor: pointer; transition: all 0.15s;
+  }
+  .es-modal-cancel:hover { border-color: var(--text); color: var(--text); }
+  .es-edit-btn {
+    background: transparent; color: var(--muted); border: 1.5px solid var(--border);
+    padding: 6px 10px; border-radius: 7px;
+    font-size: 0.78rem; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px;
+  }
+  .es-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
   @keyframes esUp {
     from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -340,6 +385,8 @@ export default function EventScan() {
   const [showResults, setShowResults] = useState(false);
   const [toast, setToast] = useState(false);
   const [error, setError] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [editDraft, setEditDraft] = useState({});
   const fileRef = useRef();
 
   const handleFile = useCallback((f) => {
@@ -433,6 +480,8 @@ ${structured}`,
   };
 
   const setEvState = (i, s) => setStates(prev => prev.map((v, idx) => idx === i ? s : v));
+  const startEdit = (i) => { setEditing(i); setEditDraft({...events[i]}); };
+  const saveEdit = () => { setEvents(prev => prev.map((ev, idx) => idx === editing ? editDraft : ev)); setEditing(null); };
   const acceptedCount = states.filter(s => s === "accepted").length;
 
   const downloadICS = (icsContent) => {
@@ -563,6 +612,10 @@ ${structured}`,
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         Skip
                       </button>
+                      <button className="es-edit-btn" onClick={() => startEdit(i)}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Edit
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -594,6 +647,38 @@ ${structured}`,
         )}
 
       </div>
+
+      {editing !== null && (
+        <div className="es-modal-overlay" onClick={e => e.target === e.currentTarget && setEditing(null)}>
+          <div className="es-modal">
+            <div className="es-modal-title">Edit Event</div>
+            <div className="es-field">
+              <label>Title</label>
+              <input value={editDraft.title || ""} onChange={e => setEditDraft(d => ({...d, title: e.target.value}))} />
+            </div>
+            <div className="es-field">
+              <label>Date (YYYY-MM-DD)</label>
+              <input value={editDraft.date || ""} onChange={e => setEditDraft(d => ({...d, date: e.target.value}))} />
+            </div>
+            <div className="es-field">
+              <label>Start Time (HH:MM)</label>
+              <input value={editDraft.time || ""} onChange={e => setEditDraft(d => ({...d, time: e.target.value}))} />
+            </div>
+            <div className="es-field">
+              <label>End Time (HH:MM)</label>
+              <input value={editDraft.endTime || ""} onChange={e => setEditDraft(d => ({...d, endTime: e.target.value}))} />
+            </div>
+            <div className="es-field">
+              <label>Location</label>
+              <input value={editDraft.location || ""} onChange={e => setEditDraft(d => ({...d, location: e.target.value}))} />
+            </div>
+            <div className="es-modal-actions">
+              <button className="es-modal-cancel" onClick={() => setEditing(null)}>Cancel</button>
+              <button className="es-modal-save" onClick={saveEdit}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
