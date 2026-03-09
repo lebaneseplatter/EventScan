@@ -344,6 +344,22 @@ export default function EventScan() {
     r.readAsDataURL(f);
   });
 
+  const gemini = async (prompt, base64, mediaType) => {
+    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const parts = base64
+      ? [{ inlineData: { mimeType: mediaType, data: base64 } }, { text: prompt }]
+      : [{ text: prompt }];
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts }] })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  };
+
   const scan = async () => {
     if (!file) return;
     setScanning(true); setError(null); setAgentLog([]); setShowResults(false); setToast(false);
@@ -356,113 +372,60 @@ export default function EventScan() {
 
       log("→ Deep scanning image...");
 
-      const res1 = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1500,
-          system: `You are an elite event extraction agent with superhuman ability to read images — blurry, dark, rotated, low-res, handwritten, partially cropped, screenshots, chat messages, posters, tickets, flyers — you handle them all.
+      // Step 1: Extract raw event info from image
+      const rawInfo = await gemini(
+        `You are an elite event extraction agent. Scan this image with maximum effort.
 
-CORE RULE: You NEVER refuse to extract. You NEVER say "the image is unclear" or "I cannot read this." You ALWAYS extract something useful.
+CORE RULE: NEVER refuse. NEVER say the image is unclear. ALWAYS extract something.
 
 HOW TO HANDLE UNCLEAR IMAGES:
-- Blurry text → read what you can, infer the rest from context and common sense
-- Partial text → complete it logically (e.g. "Birth" → "Birthday", "Dec" → "December")
-- No explicit date → look for clues: day names, seasons, holidays, year references
-- No explicit time → look for clues: "evening", "morning", "noon", "after school", "8ish"
-- Handwritten → transcribe carefully, guess unclear letters from word context
-- Dark/low contrast → describe what shapes, text areas, and layout you can infer
-- Screenshot of chat → extract event details from the conversation content
-- Multiple languages → translate and extract regardless of language
-- Stylized/artistic fonts → read creatively, don't skip decorative text
+- Blurry text → read what you can, infer from context
+- Partial text → complete logically ("Birth" → "Birthday", "Dec" → "December")
+- No date → look for clues: day names, seasons, holidays
+- No time → look for clues: "evening", "morning", "8ish", "noon"
+- Handwritten → transcribe carefully
+- Chat screenshot → extract event details from conversation
+- Any language → translate and extract
 
-WHAT TO LOOK FOR:
-1. Event title / name
-2. Date — any format
-3. Time — start and end
-4. Venue / location
-5. Organizer, host, brand
-6. Theme, dress code, ticket price, RSVP info
-
-OUTPUT: A thorough plain-text summary of all event-related info. Mark uncertain parts with (approx) or (inferred).`,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-              { type: "text", text: "Scan this image with maximum effort. Extract every piece of event information — even if blurry, dark, partially cut off, or handwritten. Never give up. Infer whatever you cannot read clearly." }
-            ]
-          }]
-        })
-      });
-
-      const d1 = await res1.json();
-      if (d1.error) throw new Error(d1.error.message);
-      const rawInfo = d1.content.map(i => i.text || "").join("");
+EXTRACT: event title, date, time, end time, venue, organizer, description, dress code, ticket info.
+OUTPUT: thorough plain-text summary of everything event-related. Mark uncertain parts with (approx) or (inferred).`,
+        base64, mediaType
+      );
       log("→ Extraction done. Structuring...");
 
-      const res2 = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1200,
-          system: `You are a data structuring agent. Convert raw event notes into a clean JSON array.
+      // Step 2: Structure into JSON
+      const structured = await gemini(
+        `Convert this raw event info into a JSON array.
 
-STRICT OUTPUT: Return ONLY a raw JSON array — no markdown, no backticks, no explanation.
+STRICT OUTPUT: Return ONLY a raw JSON array — no markdown, no backticks, no explanation whatsoever.
 Format: [{ "title": string, "date": "YYYY-MM-DD", "time": "HH:MM", "endTime": "HH:MM", "description": string }]
 
-GAP-FILLING:
-- date: any format → YYYY-MM-DD. Relative → calculate from today (${today}). Unknown → ${today}
-- time: "7pm"→"19:00", "noon"→"12:00", "evening"→"18:00", "morning"→"09:00". Unknown → "09:00"
-- endTime: if missing, add 2 hours to start
-- description: combine venue, organizer, theme, dress code, ticket info
-- FALLBACK if nothing found: [{"title":"Event from image","date":"${today}","time":"09:00","endTime":"11:00","description":"Details extracted from uploaded image"}]`,
-          messages: [{
-            role: "user",
-            content: `Convert this raw event extraction into a JSON array:\n\n${rawInfo}`
-          }]
-        })
-      });
+GAP-FILLING RULES:
+- date: convert any format to YYYY-MM-DD. Unknown → ${today}
+- time: "7pm"→"19:00", "noon"→"12:00", "evening"→"18:00", "morning"→"09:00", "night"→"20:00". Unknown → "09:00"
+- endTime: if missing, add 2 hours to start time
+- description: combine venue, organizer, theme, dress code, ticket info into one sentence
+- FALLBACK if truly nothing: [{"title":"Event from image","date":"${today}","time":"09:00","endTime":"11:00","description":"Details extracted from uploaded image"}]
 
-      const d2 = await res2.json();
-      if (d2.error) throw new Error(d2.error.message);
-      const structured = d2.content.map(i => i.text || "").join("").replace(/```json|```/g, "").trim();
+Raw event info:
+${rawInfo}`,
+        null, null
+      );
       log("→ Structuring complete. Validating...");
 
       let parsed;
       try {
-        parsed = JSON.parse(structured);
+        parsed = JSON.parse(structured.replace(/```json|```/g, "").trim());
         if (!Array.isArray(parsed)) throw new Error("Not an array");
       } catch {
         log("→ Repairing output...");
-        const res3 = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-          "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 600,
-            system: "Fix broken JSON. Return ONLY a valid JSON array. No markdown, no explanation.",
-            messages: [{ role: "user", content: `Repair and return only the fixed JSON array:\n${structured}` }]
-          })
-        });
-        const d3 = await res3.json();
-        parsed = JSON.parse(d3.content.map(i => i.text || "").join("").replace(/```json|```/g, "").trim());
+        // Step 3: Repair broken JSON
+        const fixed = await gemini(
+          `Fix this broken JSON and return ONLY a valid JSON array. No markdown, no explanation:
+${structured}`,
+          null, null
+        );
+        parsed = JSON.parse(fixed.replace(/```json|```/g, "").trim());
       }
 
       log(`✓ Done — ${parsed.length} event(s) extracted!`);
