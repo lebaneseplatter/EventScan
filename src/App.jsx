@@ -646,7 +646,6 @@ ${structured}`,
           </div>
         )}
 
-      </div>
 
       {editing !== null && (
         <div className="es-modal-overlay" onClick={e => e.target === e.currentTarget && setEditing(null)}>
@@ -679,6 +678,8 @@ ${structured}`,
           </div>
         </div>
       )}
+
+      </div>
     </>
   );
 }
