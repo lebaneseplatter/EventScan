@@ -1,87 +1,79 @@
 import { useState, useRef, useCallback } from "react";
 
-const PASTEL = {
-  rose: "#F2C4C4", peach: "#F2D9C4", sage: "#C4D9C4",
-  blue: "#C4D4E8", lavender: "#D9C4E8",
-};
-const PASTEL_DARK = {
-  rose: "#7A3535", peach: "#7A4A25", sage: "#2E5530",
-  blue: "#2A4A6A", lavender: "#4A2A6A",
-};
+
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* LIGHT — slate + amber duotone */
   .es-root {
-    --bg:           #F5EFE6;
-    --surface:      #FBF7F0;
-    --surface2:     #F0E8D8;
-    --border:       #E2D5C0;
-    --text:         #2D2418;
-    --muted:        #9A8878;
-    --accent:       #7C6A52;
-    --accent-light: #EDE3D4;
-    --danger:       #A0522D;
-    --danger-light: #F5E6DC;
-    --danger-border:#E2C4A8;
-    --spinner-track:#E2D5C0;
-    --log-bg:       #F0E8D8;
-    --toggle-bg:    #E2D5C0;
-    --toggle-knob:  #fff;
-    --grad1: rgba(242,196,196,0.35);
-    --grad2: rgba(196,217,196,0.28);
-    --grad3: rgba(217,196,232,0.22);
+    --bg:           #1E1C1A;
+    --surface:      #272422;
+    --surface2:     #302C29;
+    --border:       #3E3830;
+    --text:         #EDE0CE;
+    --muted:        #7A6E62;
+    --accent:       #C9973A;
+    --accent2:      #5B8FA8;
+    --accent-light: #302C29;
+    --danger:       #C0604A;
+    --danger-light: #2C1F1A;
+    --danger-border:#5A2E22;
+    --spinner-track:#3E3830;
+    --log-bg:       #302C29;
+    --toggle-bg:    #3E3830;
+    --toggle-knob:  #C9973A;
+    --card-shadow:  0 2px 12px rgba(0,0,0,0.4);
   }
 
-  .es-root.dark {
-    --bg:           #1A1612;
-    --surface:      #231E19;
-    --surface2:     #2C261F;
-    --border:       #3D3328;
-    --text:         #EDE3D4;
-    --muted:        #7A6A58;
-    --accent:       #C4A882;
-    --accent-light: #2C261F;
-    --danger:       #D4845A;
-    --danger-light: #2C1F18;
-    --danger-border:#5A3020;
-    --spinner-track:#3D3328;
-    --log-bg:       #2C261F;
-    --toggle-bg:    #C4A882;
-    --toggle-knob:  #1A1612;
-    --grad1: rgba(120,60,60,0.2);
-    --grad2: rgba(40,80,40,0.15);
-    --grad3: rgba(80,50,100,0.15);
+  /* LIGHT mode */
+  .es-root.light {
+    --bg:           #2A2622;
+    --surface:      #322D28;
+    --surface2:     #3A342E;
+    --border:       #4A4238;
+    --text:         #F0E4D0;
+    --muted:        #8A7A6A;
+    --accent:       #D4A44A;
+    --accent2:      #6A9FBA;
+    --accent-light: #3A342E;
+    --danger:       #C8684E;
+    --danger-light: #321E18;
+    --danger-border:#622E20;
+    --spinner-track:#4A4238;
+    --log-bg:       #3A342E;
+    --toggle-bg:    #D4A44A;
+    --toggle-knob:  #1E1C1A;
+    --card-shadow:  0 2px 16px rgba(0,0,0,0.5);
   }
 
   .es-root {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     background-image:
-      radial-gradient(ellipse at 15% 10%, var(--grad1) 0%, transparent 50%),
-      radial-gradient(ellipse at 85% 80%, var(--grad2) 0%, transparent 50%),
-      radial-gradient(ellipse at 65% 20%, var(--grad3) 0%, transparent 45%);
+      radial-gradient(ellipse at 10% 0%, rgba(201,151,58,0.12) 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(91,143,168,0.1) 0%, transparent 55%);
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center;
-    padding: 48px 16px 64px;
+    padding: 44px 16px 64px;
     color: var(--text);
     transition: background 0.35s ease, color 0.35s ease;
   }
 
   .es-header {
-    text-align: center; margin-bottom: 40px;
+    text-align: center; margin-bottom: 36px;
     animation: esUp 0.6s ease both;
-    position: relative; width: 100%; max-width: 520px;
+    position: relative; width: 100%; max-width: 560px;
   }
 
   .es-title {
     font-family: 'DM Serif Display', serif;
-    font-size: 2.8rem; letter-spacing: -0.02em; line-height: 1; color: var(--text);
+    font-size: 2.6rem; letter-spacing: -0.02em; line-height: 1; color: var(--text);
     transition: color 0.35s ease;
   }
   .es-title em { font-style: italic; color: var(--accent); }
-  .es-subtitle { margin-top: 10px; color: var(--muted); font-size: 0.93rem; font-weight: 300; }
+  .es-subtitle { margin-top: 8px; color: var(--muted); font-size: 0.9rem; font-weight: 300; }
 
   .es-toggle {
     position: absolute; top: 6px; right: 0;
@@ -98,153 +90,169 @@ const styles = `
     width: 16px; height: 16px; border-radius: 50%;
     background: var(--toggle-knob);
     transition: transform 0.28s cubic-bezier(.4,0,.2,1), background 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
   }
-  .es-root.dark .es-toggle-knob { transform: translateX(18px); }
+  .es-root.light .es-toggle-knob { transform: translateX(18px); }
 
   .es-card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 32px; width: 100%; max-width: 520px;
+    border-radius: 16px; padding: 28px; width: 100%; max-width: 560px;
     animation: esUp 0.6s ease both;
+    box-shadow: var(--card-shadow);
     transition: background 0.35s ease, border-color 0.35s ease;
   }
-  .es-card + .es-card { margin-top: 18px; }
+  .es-card + .es-card { margin-top: 16px; }
 
   .es-zone {
     border: 2px dashed var(--border); border-radius: 12px;
-    padding: 44px 24px; text-align: center; cursor: pointer;
+    padding: 40px 24px; text-align: center; cursor: pointer;
     transition: all 0.2s ease; position: relative; background: transparent;
   }
   .es-zone:hover, .es-zone.drag { border-color: var(--accent); background: var(--accent-light); }
   .es-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 
   .es-zone-icon {
-    width: 46px; height: 46px; border-radius: 12px;
+    width: 44px; height: 44px; border-radius: 11px;
     background: var(--surface2); border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;
-    transition: background 0.35s ease;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
   }
-  .es-zone h3 { font-size: 0.97rem; font-weight: 500; margin-bottom: 5px; color: var(--text); }
-  .es-zone p  { font-size: 0.83rem; color: var(--muted); }
+  .es-zone h3 { font-size: 0.95rem; font-weight: 500; margin-bottom: 4px; color: var(--text); }
+  .es-zone p  { font-size: 0.82rem; color: var(--muted); }
 
   .es-preview {
     width: 100%; border-radius: 10px; object-fit: cover;
-    max-height: 200px; margin-top: 16px; border: 1px solid var(--border); display: block;
+    max-height: 190px; margin-top: 14px; border: 1px solid var(--border); display: block;
   }
 
   .es-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; margin-top: 18px; padding: 12px 24px;
+    width: 100%; margin-top: 16px; padding: 12px 24px;
     border-radius: 10px; border: none;
     font-family: 'DM Sans', sans-serif; font-size: 0.93rem; font-weight: 500;
     cursor: pointer; transition: all 0.18s ease;
   }
-  .es-btn-primary { background: var(--accent); color: #fff; }
+  .es-btn-primary { background: var(--accent); color: #1A1612; }
   .es-btn-primary:hover:not(:disabled) { opacity: 0.87; transform: translateY(-1px); }
-  .es-btn-primary:disabled { opacity: 0.42; cursor: not-allowed; transform: none; }
+  .es-btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
 
-  .es-loader { text-align: center; padding: 32px 0; color: var(--muted); font-size: 0.88rem; }
+  .es-loader { text-align: center; padding: 28px 0; color: var(--muted); font-size: 0.88rem; }
   .es-spinner {
-    width: 30px; height: 30px; border: 2.5px solid var(--spinner-track);
+    width: 28px; height: 28px; border: 2.5px solid var(--spinner-track);
     border-top-color: var(--accent); border-radius: 50%;
     animation: esSpin 0.8s linear infinite; margin: 0 auto 10px;
   }
   .es-agent-log {
-    background: var(--log-bg); border-radius: 8px; padding: 10px 14px;
-    font-size: 0.78rem; color: var(--accent); margin-top: 10px;
+    background: var(--log-bg); border-radius: 8px; padding: 9px 13px;
+    font-size: 0.75rem; color: var(--accent); margin-top: 10px;
     font-family: monospace; text-align: left; line-height: 1.6;
-    max-height: 80px; overflow-y: auto;
-    transition: background 0.35s ease;
+    max-height: 72px; overflow-y: auto;
   }
 
   .es-section-label {
-    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
   }
 
+  /* Horizontal scroll row */
+  .es-events-row {
+    display: flex; gap: 12px;
+    overflow-x: auto; padding-bottom: 10px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .es-events-row::-webkit-scrollbar { height: 4px; }
+  .es-events-row::-webkit-scrollbar-track { background: transparent; }
+  .es-events-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
   .es-event {
+    flex: 0 0 240px; scroll-snap-align: start;
     border: 1.5px solid var(--border); border-radius: 12px;
-    padding: 18px 18px 14px; margin-bottom: 12px;
-    transition: all 0.2s ease; position: relative; background: var(--surface);
+    padding: 16px; position: relative; background: var(--surface2);
+    transition: all 0.2s ease; display: flex; flex-direction: column; gap: 10px;
   }
   .es-event.accepted { border-color: var(--accent); background: var(--accent-light); }
-  .es-event.rejected { opacity: 0.4; }
+  .es-event.rejected { opacity: 0.35; }
 
   .es-event-title {
     font-family: 'DM Serif Display', serif;
-    font-size: 1.1rem; margin-bottom: 8px; padding-right: 60px; color: var(--text);
+    font-size: 0.98rem; line-height: 1.3; color: var(--text);
+    padding-right: 48px;
   }
-  .es-event-meta { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+
+  .es-event-meta { display: flex; flex-direction: column; gap: 5px; }
   .es-tag {
     display: inline-flex; align-items: center; gap: 5px;
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 6px; padding: 3px 10px; font-size: 0.78rem; color: var(--muted);
-    transition: background 0.35s ease;
+    font-size: 0.76rem; color: var(--muted);
   }
-  .es-event-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
-  .es-event-actions { display: flex; gap: 8px; }
+  .es-tag svg { flex-shrink: 0; }
+
+  .es-tag-location { color: var(--accent2); }
+
+  .es-event-actions { display: flex; gap: 7px; margin-top: auto; }
 
   .es-accept {
-    background: var(--accent); color: #fff; border: none;
-    padding: 6px 14px; border-radius: 8px;
-    font-size: 0.8rem; font-family: 'DM Sans', sans-serif; font-weight: 500;
-    cursor: pointer; transition: opacity 0.15s; display: flex; align-items: center; gap: 5px;
+    background: var(--accent); color: #1A1612; border: none;
+    padding: 6px 12px; border-radius: 7px; flex: 1;
+    font-size: 0.78rem; font-family: 'DM Sans', sans-serif; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;
   }
   .es-accept:hover { opacity: 0.84; }
 
   .es-reject {
-    background: transparent; color: var(--danger); border: 1.5px solid var(--danger-border);
-    padding: 6px 14px; border-radius: 8px;
-    font-size: 0.8rem; font-family: 'DM Sans', sans-serif; font-weight: 500;
-    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+    background: transparent; color: var(--muted); border: 1.5px solid var(--border);
+    padding: 6px 10px; border-radius: 7px;
+    font-size: 0.78rem; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px;
   }
-  .es-reject:hover { background: var(--danger-light); }
+  .es-reject:hover { border-color: var(--danger); color: var(--danger); }
 
   .es-badge {
-    position: absolute; top: 12px; right: 14px;
-    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    position: absolute; top: 10px; right: 10px;
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 4px;
   }
-  .es-badge.ok { color: var(--accent); }
-  .es-badge.no { color: var(--muted); }
+  .es-badge.ok { background: var(--accent); color: #1A1612; }
+  .es-badge.no { background: var(--surface); color: var(--muted); }
 
   .es-export-bar {
-    margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);
+    margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   }
-  .es-export-info { font-size: 0.83rem; color: var(--muted); }
+  .es-export-info { font-size: 0.82rem; color: var(--muted); }
   .es-export-info strong { color: var(--text); }
 
   .es-export-btn {
-    background: var(--accent); color: #fff; border: none;
+    background: var(--accent); color: #1A1612; border: none;
     padding: 9px 18px; border-radius: 10px;
-    font-size: 0.85rem; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    font-size: 0.85rem; font-family: 'DM Sans', sans-serif; font-weight: 600;
     cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s;
   }
   .es-export-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
-  .es-export-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+  .es-export-btn:disabled { opacity: 0.32; cursor: not-allowed; transform: none; }
 
   .es-toast {
-    background: var(--accent); color: #fff;
-    padding: 12px 18px; border-radius: 10px;
-    font-size: 0.85rem; margin-top: 14px; text-align: center;
+    background: var(--accent); color: #1A1612;
+    padding: 11px 16px; border-radius: 10px;
+    font-size: 0.83rem; font-weight: 500; margin-top: 12px; text-align: center;
     animation: esUp 0.3s ease both;
   }
-  .es-toast code { background: rgba(255,255,255,0.18); padding: 1px 5px; border-radius: 4px; }
 
   .es-error {
     background: var(--danger-light); border: 1px solid var(--danger-border); color: var(--danger);
-    padding: 13px 16px; border-radius: 10px; font-size: 0.85rem; margin-top: 14px; line-height: 1.5;
+    padding: 12px 15px; border-radius: 10px; font-size: 0.84rem; margin-top: 12px; line-height: 1.5;
   }
 
   .es-reset {
     display: flex; align-items: center; gap: 6px;
     background: none; border: none; color: var(--muted);
-    font-size: 0.83rem; font-family: 'DM Sans', sans-serif;
-    cursor: pointer; margin-top: 12px; padding: 6px 0; transition: color 0.15s;
+    font-size: 0.82rem; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; margin-top: 10px; padding: 5px 0; transition: color 0.15s;
   }
   .es-reset:hover { color: var(--text); }
 
-  .es-empty { text-align: center; padding: 22px; color: var(--muted); font-size: 0.88rem; }
+  .es-empty { text-align: center; padding: 20px; color: var(--muted); font-size: 0.87rem; }
 
   @keyframes esUp {
     from { opacity: 0; transform: translateY(14px); }
@@ -265,6 +273,13 @@ function ClockIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+  );
+}
+function PinIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
     </svg>
   );
 }
@@ -314,7 +329,7 @@ function generateICS(evs) {
 }
 
 export default function EventScan() {
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [dragging, setDragging] = useState(false);
@@ -374,40 +389,19 @@ export default function EventScan() {
 
       // Step 1: Extract raw event info from image
       const rawInfo = await gemini(
-        `You are an elite event extraction agent. Scan this image with maximum effort.
-
-CORE RULE: NEVER refuse. NEVER say the image is unclear. ALWAYS extract something.
-
-HOW TO HANDLE UNCLEAR IMAGES:
-- Blurry text → read what you can, infer from context
-- Partial text → complete logically ("Birth" → "Birthday", "Dec" → "December")
-- No date → look for clues: day names, seasons, holidays
-- No time → look for clues: "evening", "morning", "8ish", "noon"
-- Handwritten → transcribe carefully
-- Chat screenshot → extract event details from conversation
-- Any language → translate and extract
-
-EXTRACT: event title, date, time, end time, venue, organizer, description, dress code, ticket info.
-OUTPUT: thorough plain-text summary of everything event-related. Mark uncertain parts with (approx) or (inferred).`,
+        `Extract event info from this image. Never refuse — always infer if unclear.
+Find: title, date, time, end time, location/venue. Output plain text only.`,
         base64, mediaType
       );
       log("→ Extraction done. Structuring...");
 
       // Step 2: Structure into JSON
       const structured = await gemini(
-        `Convert this raw event info into a JSON array.
+        `Convert to JSON array. Return ONLY raw JSON, no markdown.
+Format: [{"title":string,"date":"YYYY-MM-DD","time":"HH:MM","endTime":"HH:MM","location":string,"description":string}]
+Rules: date unknown→${today}, time unknown→"09:00", endTime missing→add 2hrs, location missing→"", description→1 short sentence or "".
+FALLBACK: [{"title":"Event","date":"${today}","time":"09:00","endTime":"11:00","location":"","description":""}]
 
-STRICT OUTPUT: Return ONLY a raw JSON array — no markdown, no backticks, no explanation whatsoever.
-Format: [{ "title": string, "date": "YYYY-MM-DD", "time": "HH:MM", "endTime": "HH:MM", "description": string }]
-
-GAP-FILLING RULES:
-- date: convert any format to YYYY-MM-DD. Unknown → ${today}
-- time: "7pm"→"19:00", "noon"→"12:00", "evening"→"18:00", "morning"→"09:00", "night"→"20:00". Unknown → "09:00"
-- endTime: if missing, add 2 hours to start time
-- description: combine venue, organizer, theme, dress code, ticket info into one sentence
-- FALLBACK if truly nothing: [{"title":"Event from image","date":"${today}","time":"09:00","endTime":"11:00","description":"Details extracted from uploaded image"}]
-
-Raw event info:
 ${rawInfo}`,
         null, null
       );
@@ -473,7 +467,7 @@ ${structured}`,
   return (
     <>
       <style>{styles}</style>
-      <div className={`es-root${dark ? " dark" : ""}`}>
+      <div className={`es-root${dark ? "" : " light"}`}>
 
         <header className="es-header">
           <h1 className="es-title">Event<em>Scan</em></h1>
@@ -544,28 +538,30 @@ ${structured}`,
             {events.length === 0 ? (
               <div className="es-empty">No events found. Try a clearer photo!</div>
             ) : (
-              events.map((ev, i) => (
-                <div key={i} className={`es-event ${states[i] !== "pending" ? states[i] : ""}`}>
-                  {states[i] === "accepted" && <span className="es-badge ok">✓ Added</span>}
-                  {states[i] === "rejected" && <span className="es-badge no">Skipped</span>}
-                  <div className="es-event-title">{ev.title || "Untitled Event"}</div>
-                  <div className="es-event-meta">
-                    <span className="es-tag"><CalIcon />{ev.date ? formatDate(ev.date) : "Date unknown"}</span>
-                    <span className="es-tag"><ClockIcon />{ev.time || "?"}{ev.endTime ? ` – ${ev.endTime}` : ""}</span>
+              <div className="es-events-row">
+                {events.map((ev, i) => (
+                  <div key={i} className={`es-event ${states[i] !== "pending" ? states[i] : ""}`}>
+                    {states[i] === "accepted" && <span className="es-badge ok">✓ Added</span>}
+                    {states[i] === "rejected" && <span className="es-badge no">Skip</span>}
+                    <div className="es-event-title">{ev.title || "Untitled Event"}</div>
+                    <div className="es-event-meta">
+                      <span className="es-tag"><CalIcon />{ev.date ? formatDate(ev.date) : "Date unknown"}</span>
+                      <span className="es-tag"><ClockIcon />{ev.time || "?"}{ev.endTime ? ` – ${ev.endTime}` : ""}</span>
+                      {ev.location && <span className="es-tag es-tag-location"><PinIcon />{ev.location}</span>}
+                    </div>
+                    <div className="es-event-actions">
+                      <button className="es-accept" onClick={() => setEvState(i, "accepted")}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        {states[i] === "accepted" ? "Added" : "Add"}
+                      </button>
+                      <button className="es-reject" onClick={() => setEvState(i, "rejected")}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Skip
+                      </button>
+                    </div>
                   </div>
-                  {ev.description && <div className="es-event-desc">{ev.description}</div>}
-                  <div className="es-event-actions">
-                    <button className="es-accept" onClick={() => setEvState(i, "accepted")}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      {states[i] === "accepted" ? "Added" : "Add to Calendar"}
-                    </button>
-                    <button className="es-reject" onClick={() => setEvState(i, "rejected")}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                      Skip
-                    </button>
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
 
             <div className="es-export-bar">
