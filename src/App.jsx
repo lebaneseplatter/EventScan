@@ -437,7 +437,7 @@ export default function EventScan() {
       // Step 1: Extract raw event info from image
       const rawInfo = await gemini(
         `Extract event info from this image. Never refuse — always infer if unclear.
-Find: title, date, time, end time, location/venue. Output plain text only.`,
+Find: title (should be breif), date, time, end time, location/venue. Output plain text only.`,
         base64, mediaType
       );
       log("→ Extraction done. Structuring...");
@@ -497,7 +497,7 @@ ${structured}`,
   const shareICS = async () => {
     const accepted = events.filter((_, i) => states[i] === "accepted");
     const icsContent = generateICS(accepted);
-    const file = new File([icsContent], "events.ics", { type: "text/calendar" });
+    const file = new File([icsContent], "ScannedEvent.ics", { type: "text/calendar" });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
