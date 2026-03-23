@@ -3,7 +3,8 @@ import { useState, useRef, useCallback } from "react";
 
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapi
+  s.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   /* LIGHT — slate + amber duotone */
@@ -407,7 +408,7 @@ export default function EventScan() {
   });
 
   const gemini = async (prompt, base64, mediaType) => {
-    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const API_KEY = "api key here";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
     const parts = base64
       ? [{ inlineData: { mimeType: mediaType, data: base64 } }, { text: prompt }]
